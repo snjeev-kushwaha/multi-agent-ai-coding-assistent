@@ -81,7 +81,13 @@ def coder_node(state: GraphState) -> GraphState:
 
         # No more tool calls -- the model is done (or gave up).
         final_text = msg.content or ""
-        if task.filepath not in tools.list_files():
+        norm_task_path = task.filepath.replace("\\", "/").lstrip("./")
+        file_list = [
+            f.strip().replace("\\", "/").lstrip("./")
+            for f in tools.list_files().splitlines()
+            if f.strip() and not f.strip().startswith("(")
+        ]
+        if norm_task_path not in file_list:
             error = f"Coder finished without writing {task.filepath}. Last message: {final_text[:300]}"
         break
     else:

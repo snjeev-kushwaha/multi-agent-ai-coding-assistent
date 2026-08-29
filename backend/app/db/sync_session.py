@@ -10,11 +10,16 @@ from app.config import get_settings
 
 
 def _to_sync_url(async_url: str) -> str:
-    return (
-        async_url
-        .replace("sqlite+aiosqlite", "sqlite")
-        .replace("postgresql+asyncpg", "postgresql+psycopg2")
-    )
+    url = async_url
+    if url.startswith("sqlite+aiosqlite"):
+        return url.replace("sqlite+aiosqlite", "sqlite", 1)
+    if url.startswith("postgresql+asyncpg"):
+        return url.replace("postgresql+asyncpg", "postgresql+psycopg2", 1)
+    if url.startswith("postgres://"):
+        return url.replace("postgres://", "postgresql+psycopg2://", 1)
+    if url.startswith("postgresql://") and not url.startswith("postgresql+psycopg2://"):
+        return url.replace("postgresql://", "postgresql+psycopg2://", 1)
+    return url
 
 
 settings = get_settings()

@@ -57,9 +57,26 @@ def _check_balanced_brackets(content: str) -> tuple[bool, str]:
     return True, "balanced brackets (basic check only)"
 
 
+def _check_passthrough(content: str) -> tuple[bool, str]:
+    return True, "text content ok"
+
+
 _CHECKERS = {
     ".py": _check_python,
     ".json": _check_json,
+    ".md": _check_passthrough,
+    ".txt": _check_passthrough,
+    ".html": _check_passthrough,
+    ".htm": _check_passthrough,
+    ".yaml": _check_passthrough,
+    ".yml": _check_passthrough,
+    ".toml": _check_passthrough,
+    ".env": _check_passthrough,
+    ".css": _check_balanced_brackets,
+    ".js": _check_balanced_brackets,
+    ".jsx": _check_balanced_brackets,
+    ".ts": _check_balanced_brackets,
+    ".tsx": _check_balanced_brackets,
 }
 
 

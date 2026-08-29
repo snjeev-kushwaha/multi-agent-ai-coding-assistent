@@ -24,15 +24,15 @@ class Settings(BaseSettings):
     CORS_ORIGINS: list[str] = ["http://localhost:5173", "http://localhost:3000"]
 
     # --- Database ---
-    # Swap for a real Postgres DSN in production:
-    # postgresql+asyncpg://user:pass@host:5432/dbname
-    DATABASE_URL: str = "sqlite+aiosqlite:///./coder_buddy.db"
+    # Default is Postgres (Docker container: postgresql+asyncpg://coder_buddy:coder_buddy@localhost:5432/coder_buddy)
+    # When running within Docker Compose network: postgresql+asyncpg://coder_buddy:coder_buddy@postgres:5432/coder_buddy
+    DATABASE_URL: str = "postgresql+asyncpg://coder_buddy:coder_buddy@localhost:5432/coder_buddy"
 
     # --- Groq LLM ---
     GROQ_API_KEY: str = ""
-    GROQ_MODEL_PLANNER: str = "llama-3.1-8b-instant"      # cheap/fast, structured JSON tasks
-    GROQ_MODEL_ARCHITECT: str = "llama-3.1-8b-instant"
-    GROQ_MODEL_CODER: str = "llama-3.3-70b-versatile"      # quality matters most here
+    GROQ_MODEL_PLANNER: str = "openai/gpt-oss-20b"        # cheap/fast, structured JSON tasks
+    GROQ_MODEL_ARCHITECT: str = "openai/gpt-oss-120b"
+    GROQ_MODEL_CODER: str = "openai/gpt-oss-120b"         # high capability model for code generation
     GROQ_MAX_RETRIES: int = 3
     GROQ_TIMEOUT_SECONDS: int = 60
     # Verify current model names/limits at https://console.groq.com/docs/models

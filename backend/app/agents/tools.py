@@ -48,7 +48,9 @@ def _resolve_safe_path(project_root: str, relative_path: str) -> Path:
     """Resolves a path and rejects any attempt to escape project_root."""
     root = Path(project_root).resolve()
     target = (root / relative_path).resolve()
-    if root not in target.parents and target != root:
+    try:
+        target.relative_to(root)
+    except ValueError:
         raise ToolError(f"Path '{relative_path}' escapes the project sandbox. Rejected.")
     return target
 
@@ -63,8 +65,9 @@ class CoderTools:
     """
 
     def __init__(self, project_root: str, permissive: bool = False, max_file_bytes: int = 200_000):
-        Path(project_root).mkdir(parents=True, exist_ok=True)
-        self.project_root = project_root
+        self.root = Path(project_root).resolve()
+        self.root.mkdir(parents=True, exist_ok=True)
+        self.project_root = str(self.root)
         self.permissive = permissive
         self.max_file_bytes = max_file_bytes
 
@@ -111,15 +114,15 @@ class CoderTools:
         target = _resolve_safe_path(self.project_root, path)
         if not target.exists():
             return f"(path '{path}' does not exist yet)"
-        entries = sorted(str(p.relative_to(self.project_root)) for p in target.rglob("*") if p.is_file())
+        entries = sorted(p.relative_to(self.root).as_posix() for p in target.rglob("*") if p.is_file())
         return "\n".join(entries) if entries else "(empty)"
 
     def glob_files(self, pattern: str, max_results: int = 100) -> str:
-        root = Path(self.project_root)
+        root = self.root
         matches = [
-            str(p.relative_to(root))
+            p.relative_to(root).as_posix()
             for p in root.rglob("*")
-            if p.is_file() and fnmatch.fnmatch(str(p.relative_to(root)), pattern)
+            if p.is_file() and fnmatch.fnmatch(p.relative_to(root).as_posix(), pattern)
         ]
         matches = matches[:max_results]
         return "\n".join(matches) if matches else f"(no files match '{pattern}')"
@@ -143,7 +146,7 @@ class CoderTools:
                 continue
             for lineno, line in enumerate(text.splitlines(), start=1):
                 if regex.search(line):
-                    rel = f.relative_to(self.project_root)
+                    rel = f.relative_to(self.root).as_posix()
                     results.append(f"{rel}:{lineno}: {line.strip()[:200]}")
                     if len(results) >= max_results:
                         return "\n".join(results)
