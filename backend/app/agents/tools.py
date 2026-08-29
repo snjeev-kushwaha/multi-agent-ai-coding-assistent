@@ -183,7 +183,12 @@ TOOL_SCHEMAS = [
             "description": "Read the current contents of a file in the project.",
             "parameters": {
                 "type": "object",
-                "properties": {"path": {"type": "string", "description": "Relative file path"}},
+                "properties": {
+                    "path": {
+                        "type": "string",
+                        "description": "Relative file path to read (e.g. 'src/app.module.ts').",
+                    },
+                },
                 "required": ["path"],
             },
         },
@@ -192,12 +197,22 @@ TOOL_SCHEMAS = [
         "type": "function",
         "function": {
             "name": "write_file",
-            "description": "Create a file or overwrite it completely with new content.",
+            "description": (
+                "Create a file or overwrite it completely with new content. "
+                "Always pass 'path' and 'content'. Even for JSON, YAML, or config files, "
+                "'content' must be the complete file text serialized as a string."
+            ),
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "path": {"type": "string"},
-                    "content": {"type": "string"},
+                    "path": {
+                        "type": "string",
+                        "description": "Relative file path to write (e.g. 'tsconfig.json', 'src/user/user.service.ts').",
+                    },
+                    "content": {
+                        "type": "string",
+                        "description": "The entire raw text or code content of the file as a single string. Do NOT pass nested objects or JSON keys directly as tool arguments.",
+                    },
                 },
                 "required": ["path", "content"],
             },
@@ -215,9 +230,18 @@ TOOL_SCHEMAS = [
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "path": {"type": "string"},
-                    "old_str": {"type": "string"},
-                    "new_str": {"type": "string"},
+                    "path": {
+                        "type": "string",
+                        "description": "Relative file path to edit.",
+                    },
+                    "old_str": {
+                        "type": "string",
+                        "description": "The exact substring currently in the file to replace. Must appear exactly once in the file.",
+                    },
+                    "new_str": {
+                        "type": "string",
+                        "description": "The replacement string.",
+                    },
                 },
                 "required": ["path", "old_str", "new_str"],
             },
@@ -230,7 +254,13 @@ TOOL_SCHEMAS = [
             "description": "List all files currently in the project (or a subdirectory).",
             "parameters": {
                 "type": "object",
-                "properties": {"path": {"type": "string", "default": "."}},
+                "properties": {
+                    "path": {
+                        "type": "string",
+                        "description": "Relative directory path to list (defaults to '.' for project root).",
+                        "default": ".",
+                    },
+                },
             },
         },
     },
@@ -238,12 +268,19 @@ TOOL_SCHEMAS = [
         "type": "function",
         "function": {
             "name": "glob_files",
-            "description": "Find files matching a glob pattern, e.g. '**/*.tsx' or 'src/**/*.js'.",
+            "description": "Find files matching a glob pattern, e.g. '**/*.tsx' or 'src/**/*.ts'.",
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "pattern": {"type": "string"},
-                    "max_results": {"type": "integer", "default": 100},
+                    "pattern": {
+                        "type": "string",
+                        "description": "Glob pattern (e.g. '**/*.ts', 'src/**/*.json').",
+                    },
+                    "max_results": {
+                        "type": "integer",
+                        "description": "Maximum number of matching file paths to return.",
+                        "default": 100,
+                    },
                 },
                 "required": ["pattern"],
             },
@@ -257,9 +294,20 @@ TOOL_SCHEMAS = [
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "pattern": {"type": "string"},
-                    "path": {"type": "string", "default": "."},
-                    "ignore_case": {"type": "boolean", "default": False},
+                    "pattern": {
+                        "type": "string",
+                        "description": "Regular expression pattern to search for.",
+                    },
+                    "path": {
+                        "type": "string",
+                        "description": "Directory or file path to search within.",
+                        "default": ".",
+                    },
+                    "ignore_case": {
+                        "type": "boolean",
+                        "description": "Whether to perform a case-insensitive search.",
+                        "default": False,
+                    },
                 },
                 "required": ["pattern"],
             },
@@ -275,7 +323,12 @@ TOOL_SCHEMAS = [
             ),
             "parameters": {
                 "type": "object",
-                "properties": {"command": {"type": "string"}},
+                "properties": {
+                    "command": {
+                        "type": "string",
+                        "description": "The shell command to run in the project root.",
+                    },
+                },
                 "required": ["command"],
             },
         },

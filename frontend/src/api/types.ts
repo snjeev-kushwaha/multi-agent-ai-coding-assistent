@@ -41,12 +41,15 @@ export interface Job {
   id: string;
   status: JobStatus;
   user_prompt: string;
+  mode?: "build" | "edit";
   plan: Plan | null;
   task_plan: TaskPlan | null;
   files_written: Record<string, boolean> | null;
   files_failed: Record<string, string> | null;
   download_path: string | null;
   error_message: string | null;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface InterruptPayload {
@@ -67,4 +70,11 @@ export interface AuthTokens {
   access_token: string;
   refresh_token: string;
   token_type: string;
+}
+
+export interface UserProfile {
+  id: string;
+  email: string;
+  created_at: string;
+  total_projects: number;
 }

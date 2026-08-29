@@ -1,8 +1,10 @@
+from datetime import datetime
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, EmailStr, Field
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.deps import get_current_user
 from app.core.exceptions import AuthError, ValidationFailedError
 from app.core.rate_limit import enforce_rate_limit
 from app.core.security import (
@@ -12,10 +14,20 @@ from app.core.security import (
     hash_password,
     verify_password,
 )
-from app.db.models import User
+from app.db.models import Job, User
 from app.db.session import get_db
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+
+class UserProfileResponse(BaseModel):
+    id: str
+    email: EmailStr
+    created_at: datetime
+    total_projects: int
+
+    class Config:
+        from_attributes = True
 
 
 class SignupRequest(BaseModel):
@@ -85,4 +97,19 @@ async def refresh(payload: RefreshRequest, db: AsyncSession = Depends(get_db)):
     return TokenResponse(
         access_token=create_access_token(user.id),
         refresh_token=create_refresh_token(user.id),
+    )
+
+
+@router.get("/me", response_model=UserProfileResponse)
+async def get_me(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    count_res = await db.execute(select(func.count(Job.id)).where(Job.user_id == current_user.id))
+    total_projects = count_res.scalar_one() or 0
+    return UserProfileResponse(
+        id=current_user.id,
+        email=current_user.email,
+        created_at=current_user.created_at,
+        total_projects=total_projects,
     )

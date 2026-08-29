@@ -47,7 +47,8 @@ def coder_node(state: GraphState) -> GraphState:
         f"Tech stack: {', '.join(plan.tech_stack)}\n\n"
         f"Your assigned file: {task.filepath}\n"
         f"Task: {task.task_description}\n\n"
-        f"Dependency file contents:\n{dep_context}"
+        f"Dependency file contents:\n{dep_context}\n\n"
+        f"Write this file using write_file(path='{task.filepath}', content=<full file content as a string>)."
     )
 
     messages = [

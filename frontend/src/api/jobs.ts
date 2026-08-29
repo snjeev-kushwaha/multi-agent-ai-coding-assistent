@@ -24,6 +24,12 @@ export async function listJobs(): Promise<Job[]> {
   return apiFetch<Job[]>("/jobs");
 }
 
+export async function deleteJob(jobId: string): Promise<void> {
+  await apiFetch(`/jobs/${jobId}`, {
+    method: "DELETE",
+  });
+}
+
 export async function respondToJob(
   jobId: string,
   payload: { action?: "proceed" | "edit" | "cancel"; instruction?: string; answers?: string[] }

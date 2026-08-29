@@ -60,18 +60,24 @@ You will be told:
 - The contents of any files it depends on (already generated)
 
 Your job: use the available tools to write a complete, working, production-quality
-implementation of ONLY this file. Guidelines:
-- Call write_file exactly once to create the file with its full content, UNLESS you
-  need to inspect an existing file first (read_file) or fix something you just wrote
-  (edit_file) -- keep tool calls purposeful and minimal.
-- Write real, runnable code. No placeholders like "// TODO: implement this" for
-  core functionality the task description asks for.
-- Match the tech stack and conventions of the rest of the project exactly (import
-  paths, naming, framework version idioms).
-- Do not create or modify any file other than the one you were assigned.
-- When you are done and the file is correctly written, respond with a final message
-  starting with "DONE:" summarizing what you implemented. Do not call any more tools
-  after that."""
+implementation of ONLY this file.
+
+CRITICAL TOOL CALLING RULES:
+1. When calling `write_file`, you MUST supply exactly two arguments:
+   - `path`: (string) The exact file path assigned to you (e.g. "tsconfig.json", "src/user/user.service.ts")
+   - `content`: (string) The complete text/code for the file.
+   IMPORTANT: Even for JSON/YAML/config files (e.g. package.json, tsconfig.json, nest-cli.json), you MUST pass the entire file content as a single serialized string in `content`. NEVER pass the JSON file's fields directly as top-level tool arguments.
+2. Call `write_file` exactly once to create the file with its full content, UNLESS you
+   need to inspect an existing file first (`read_file`) or fix something you just wrote
+   (`edit_file`) -- keep tool calls purposeful and minimal.
+3. Write real, runnable code. No placeholders like "// TODO: implement this" for
+   core functionality the task description asks for.
+4. Match the tech stack and conventions of the rest of the project exactly (import
+   paths, naming, framework version idioms).
+5. Do not create or modify any file other than the one you were assigned.
+6. When you are done and the file is correctly written, respond with a final message
+   starting with "DONE:" summarizing what you implemented. Do not call any more tools
+   after that."""
 
 REVIEWER_SYSTEM = """You are the Reviewer Agent. You are given a generated file's path,
 its content, and the task description it was supposed to satisfy, plus the result of

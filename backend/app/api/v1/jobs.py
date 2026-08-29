@@ -1,4 +1,5 @@
 import asyncio
+from datetime import datetime
 import json
 
 from fastapi import APIRouter, Depends
@@ -31,12 +32,15 @@ class JobResponse(BaseModel):
     id: str
     status: str
     user_prompt: str
+    mode: str = "build"
     plan: dict | None = None
     task_plan: dict | None = None
     files_written: dict | None = None
     files_failed: dict | None = None
     download_path: str | None = None
     error_message: str | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
     class Config:
         from_attributes = True
@@ -105,7 +109,14 @@ async def create_job(
     start_job(job.id, payload.prompt, payload.mode, _make_status_callback(job.id))
     logger.info("Started job %s for user %s", job.id, user.id)
 
-    return JobResponse(id=job.id, status=job.status, user_prompt=job.user_prompt)
+    return JobResponse(
+        id=job.id,
+        status=job.status,
+        user_prompt=job.user_prompt,
+        mode=job.mode,
+        created_at=job.created_at,
+        updated_at=job.updated_at,
+    )
 
 
 @router.get("/{job_id}", response_model=JobResponse)
@@ -116,18 +127,53 @@ async def get_job(job_id: str, user: User = Depends(get_current_user), db: Async
         raise NotFoundError("Job not found")
 
     return JobResponse(
-        id=job.id, status=job.status, user_prompt=job.user_prompt,
-        plan=job.plan_json, task_plan=job.task_plan_json,
-        files_written=job.files_written, files_failed=job.files_failed,
-        download_path=job.download_path, error_message=job.error_message,
+        id=job.id,
+        status=job.status,
+        user_prompt=job.user_prompt,
+        mode=job.mode,
+        plan=job.plan_json,
+        task_plan=job.task_plan_json,
+        files_written=job.files_written,
+        files_failed=job.files_failed,
+        download_path=job.download_path,
+        error_message=job.error_message,
+        created_at=job.created_at,
+        updated_at=job.updated_at,
     )
 
 
-@router.get("")
+@router.get("", response_model=list[JobResponse])
 async def list_jobs(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Job).where(Job.user_id == user.id).order_by(Job.created_at.desc()))
     jobs = result.scalars().all()
-    return [JobResponse(id=j.id, status=j.status, user_prompt=j.user_prompt) for j in jobs]
+    return [
+        JobResponse(
+            id=j.id,
+            status=j.status,
+            user_prompt=j.user_prompt,
+            mode=j.mode,
+            plan=j.plan_json,
+            task_plan=j.task_plan_json,
+            files_written=j.files_written,
+            files_failed=j.files_failed,
+            download_path=j.download_path,
+            error_message=j.error_message,
+            created_at=j.created_at,
+            updated_at=j.updated_at,
+        )
+        for j in jobs
+    ]
+
+
+@router.delete("/{job_id}")
+async def delete_job(job_id: str, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Job).where(Job.id == job_id, Job.user_id == user.id))
+    job = result.scalar_one_or_none()
+    if job is None:
+        raise NotFoundError("Job not found")
+    await db.delete(job)
+    await db.commit()
+    return {"ok": True, "message": "Project deleted successfully"}
 
 
 @router.get("/{job_id}/files/{file_path:path}")
