@@ -118,7 +118,7 @@ export function AdminFailuresPage() {
               {stage.percentage}% of failures
             </div>
             {/* Progress bar */}
-            <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+            <div className="w-full bg-slate-200 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
               <div
                 style={{ width: `${stage.percentage}%` }}
                 className="bg-amber-400 h-full rounded-full"

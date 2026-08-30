@@ -16,11 +16,13 @@ import {
 } from "lucide-react";
 import { getMetricsOverview, getMetricsTimeseries } from "../../../api/admin";
 import type { MetricsOverviewResponse, MetricsTimeseriesResponse, TimeseriesPoint } from "../../../api/adminTypes";
+import { useTheme } from "../../../hooks/useTheme";
 
 type MetricView = "jobs" | "tokens" | "status";
 type ChartType = "line" | "bar";
 
 export function AdminOverviewPage() {
+  const { mode } = useTheme();
   const [overview, setOverview] = useState<MetricsOverviewResponse | null>(null);
   const [timeseries, setTimeseries] = useState<MetricsTimeseriesResponse | null>(null);
   const [days, setDays] = useState<number>(30);
@@ -338,19 +340,19 @@ export function AdminOverviewPage() {
 
               {/* Grid Lines */}
               {[0, 0.25, 0.5, 0.75, 1].map((ratio) => {
-                const y = paddingY + chartH * ratio;
-                return (
-                  <line
-                    key={ratio}
-                    x1={paddingX}
-                    y1={y}
-                    x2={svgWidth - paddingX}
-                    y2={y}
-                    stroke="rgba(255,255,255,0.06)"
-                    strokeDasharray="4 4"
-                  />
-                );
-              })}
+                 const y = paddingY + chartH * ratio;
+                 return (
+                   <line
+                     key={ratio}
+                     x1={paddingX}
+                     y1={y}
+                     x2={svgWidth - paddingX}
+                     y2={y}
+                     stroke={mode === "dark" ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.07)"}
+                     strokeDasharray="4 4"
+                   />
+                 );
+               })}
 
               {/* Filled Area */}
               {areaPath && <path d={areaPath} fill="url(#gradient-accent)" />}
@@ -375,7 +377,7 @@ export function AdminOverviewPage() {
                     cy={c.y}
                     r={hoveredPoint?.date === c.point.date ? 5 : 3}
                     fill={hoveredPoint?.date === c.point.date ? "#ffffff" : metricView === "tokens" ? "#f59e0b" : "#6366f1"}
-                    stroke="#0a0c10"
+                    stroke={mode === "dark" ? "#0a0c10" : "#ffffff"}
                     strokeWidth="1.5"
                     className="transition-all cursor-pointer"
                     onMouseEnter={() => setHoveredPoint(c.point)}

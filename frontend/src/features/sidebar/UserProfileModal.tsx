@@ -140,7 +140,7 @@ export function UserProfileModal({ user, isOpen, onClose, onLogout, onOpenAdmin 
 
           <button
             onClick={onClose}
-            className="rounded-xl bg-slate-800 px-4 py-2 text-xs font-medium text-slate-200 hover:bg-slate-700 transition"
+            className="rounded-xl border border-border bg-surface px-4 py-2 text-xs font-medium text-slate-300 hover:bg-surfaceRaised hover:text-white transition"
           >
             Close
           </button>

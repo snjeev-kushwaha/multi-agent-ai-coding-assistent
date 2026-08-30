@@ -25,6 +25,7 @@ import { python } from "@codemirror/lang-python";
 import { json } from "@codemirror/lang-json";
 import type { AdminJobDetailResponse } from "../../../api/adminTypes";
 import type { JobStatus } from "../../../api/types";
+import { useTheme } from "../../../hooks/useTheme";
 
 function extensionFor(path: string) {
   if (path.endsWith(".py")) return [python()];
@@ -50,6 +51,7 @@ export function AdminJobDetailDrawer({
   onClose,
   onCancelJob,
 }: AdminJobDetailDrawerProps) {
+  const { mode } = useTheme();
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
 
   useEffect(() => {
@@ -85,7 +87,7 @@ export function AdminJobDetailDrawer({
         );
       case "cancelled":
         return (
-          <span className="inline-flex items-center gap-1 rounded-full bg-slate-800 px-2.5 py-0.5 text-xs font-medium text-slate-400 border border-border">
+          <span className="inline-flex items-center gap-1 rounded-full bg-surfaceRaised px-2.5 py-0.5 text-xs font-medium text-slate-400 border border-border">
             <Ban size={12} /> Cancelled
           </span>
         );
@@ -102,7 +104,7 @@ export function AdminJobDetailDrawer({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-3 sm:p-6 animate-in fade-in duration-150">
       <div className="relative w-full max-w-6xl h-[90vh] flex flex-col rounded-2xl border border-border bg-surfaceRaised shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-border p-4 bg-[#0e1117]">
+        <div className="flex items-center justify-between border-b border-border p-4 bg-surface">
           <div className="min-w-0 flex-1 pr-4">
             <div className="flex items-center gap-3">
               <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-accent text-white shadow shrink-0">
@@ -148,7 +150,7 @@ export function AdminJobDetailDrawer({
         {/* Body Layout: 2-Column Split */}
         <div className="flex-1 grid grid-cols-1 lg:grid-cols-[340px_1fr] overflow-hidden min-h-0 divide-y lg:divide-y-0 lg:divide-x divide-border/60">
           {/* Left Column: Metadata & Plan & FileTree */}
-          <div className="flex flex-col gap-4 overflow-y-auto p-4 bg-[#0a0c10]/50">
+          <div className="flex flex-col gap-4 overflow-y-auto p-4 bg-surfaceRaised/40">
             {/* Error Banner */}
             {job.error_message && (
               <div className="rounded-xl border border-danger/40 bg-danger/10 p-3 text-xs text-danger space-y-1 font-mono">
@@ -222,7 +224,7 @@ export function AdminJobDetailDrawer({
                           <span className="truncate">{path}</span>
                         </div>
                         {hasDiskContent && (
-                          <span className="text-[9px] uppercase px-1 rounded bg-slate-800 text-slate-400 shrink-0">
+                          <span className="text-[9px] uppercase px-1 rounded bg-surfaceRaised text-slate-500 dark:text-slate-400 border border-border/50 shrink-0">
                             Disk
                           </span>
                         )}
@@ -235,8 +237,8 @@ export function AdminJobDetailDrawer({
           </div>
 
           {/* Right Column: CodeMirror Code Viewer */}
-          <div className="flex flex-col overflow-hidden bg-[#0a0d14]">
-            <div className="flex items-center justify-between border-b border-border/80 bg-[#0d1017] px-4 py-2 text-xs font-mono text-slate-300">
+          <div className="flex flex-col overflow-hidden bg-surface">
+            <div className="flex items-center justify-between border-b border-border/80 bg-surfaceRaised px-4 py-2 text-xs font-mono text-slate-300">
               <span className="flex items-center gap-2 text-slate-200">
                 <FileCode size={14} className="text-accent" />
                 <span>{selectedPath || "No file selected"}</span>
@@ -256,7 +258,7 @@ export function AdminJobDetailDrawer({
               ) : job.files && job.files[selectedPath] !== undefined ? (
                 <CodeMirror
                   value={job.files[selectedPath]}
-                  theme="dark"
+                  theme={mode === "dark" ? "dark" : "light"}
                   extensions={extensionFor(selectedPath)}
                   editable={false}
                   basicSetup={{ lineNumbers: true, foldGutter: true }}

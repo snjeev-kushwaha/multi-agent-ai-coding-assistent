@@ -256,7 +256,7 @@ export function AdminAuditLogsPage() {
               </button>
             </div>
 
-            <div className="my-4 max-h-72 overflow-y-auto rounded-xl bg-[#090b10] border border-border p-3.5 text-xs font-mono text-emerald-300 whitespace-pre">
+            <div className="my-4 max-h-72 overflow-y-auto rounded-xl bg-surfaceRaised border border-border p-3.5 text-xs font-mono text-emerald-700 dark:text-emerald-300 whitespace-pre">
               {JSON.stringify(
                 {
                   id: selectedLog.id,

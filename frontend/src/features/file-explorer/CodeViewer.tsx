@@ -6,6 +6,7 @@ import { css } from "@codemirror/lang-css";
 import { python } from "@codemirror/lang-python";
 import { json } from "@codemirror/lang-json";
 import { getJobFile } from "../../api/jobs";
+import { useTheme } from "../../hooks/useTheme";
 
 function extensionFor(path: string) {
   if (path.endsWith(".py")) return [python()];
@@ -17,6 +18,7 @@ function extensionFor(path: string) {
 }
 
 export function CodeViewer({ jobId, path }: { jobId: string; path: string | null }) {
+  const { mode } = useTheme();
   const [content, setContent] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -61,7 +63,7 @@ export function CodeViewer({ jobId, path }: { jobId: string; path: string | null
         {!loading && !error && (
           <CodeMirror
             value={content}
-            theme="dark"
+            theme={mode === "dark" ? "dark" : "light"}
             extensions={extensionFor(path)}
             editable={false}
             basicSetup={{ lineNumbers: true, foldGutter: true }}

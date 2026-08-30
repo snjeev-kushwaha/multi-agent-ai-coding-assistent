@@ -213,7 +213,7 @@ export default function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <div className="h-screen bg-canvas text-slate-100">
+        <div className="h-screen bg-canvas text-slate-900 dark:text-slate-100">
           <AppInner />
         </div>
       </AuthProvider>

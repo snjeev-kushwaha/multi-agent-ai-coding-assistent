@@ -39,7 +39,7 @@ export function ThemeSelector() {
             onClick={() => setMode("light")}
             className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 px-2 text-[11px] font-medium transition ${
               mode === "light"
-                ? "bg-white text-slate-900 shadow font-semibold"
+                ? "bg-white text-slate-900 shadow font-semibold border border-border/80"
                 : "text-slate-400 hover:text-slate-200"
             }`}
           >
@@ -51,7 +51,7 @@ export function ThemeSelector() {
             onClick={() => setMode("dark")}
             className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 px-2 text-[11px] font-medium transition ${
               mode === "dark"
-                ? "bg-[#1f242d] text-white shadow font-semibold border border-white/10"
+                ? "bg-surfaceRaised text-white shadow font-semibold border border-white/10"
                 : "text-slate-400 hover:text-slate-200"
             }`}
           >
@@ -75,7 +75,7 @@ export function ThemeSelector() {
             <Palette size={14} />
             <span
               style={{ backgroundColor: colorTheme.color }}
-              className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full ring-1 ring-black"
+              className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full ring-1 ring-black/30"
             />
           </div>
         </button>
@@ -85,7 +85,7 @@ export function ThemeSelector() {
       {isOpen && (
         <div
           ref={popoverRef}
-          className="absolute bottom-full mb-2 left-0 right-0 sm:left-0 sm:right-auto sm:w-72 z-50 rounded-2xl border border-border/90 bg-[#14171f] p-3 shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-150"
+          className="absolute bottom-full mb-2 left-0 right-0 sm:left-0 sm:right-auto sm:w-72 z-50 rounded-2xl border border-border bg-surface p-3 shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-150"
         >
           {/* Header */}
           <div className="border-b border-border/60 pb-2.5 mb-2 px-1">
@@ -113,15 +113,15 @@ export function ThemeSelector() {
                   }}
                   className={`flex w-full items-center justify-between gap-3 rounded-xl p-2 text-left transition ${
                     isSelected
-                      ? "bg-surfaceRaised/90 border border-border text-white shadow-sm"
-                      : "text-slate-300 hover:bg-surfaceRaised/50 border border-transparent"
+                      ? "bg-surfaceRaised border border-border text-slate-900 dark:text-white shadow-sm font-medium"
+                      : "text-slate-700 dark:text-slate-300 hover:bg-surfaceRaised/60 border border-transparent"
                   }`}
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
                     {/* Swatch preview */}
                     <div
                       style={{ backgroundColor: theme.color }}
-                      className="h-6 w-6 rounded-lg shadow shrink-0 border border-white/20"
+                      className="h-6 w-6 rounded-lg shadow shrink-0 border border-border"
                     />
                     <div className="min-w-0">
                       <div className="text-xs font-semibold text-slate-100 truncate">

@@ -36,7 +36,7 @@ export function AdminLayout({ onExitAdmin }: AdminLayoutProps) {
   ];
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-canvas text-slate-200">
+    <div className="flex h-screen w-screen overflow-hidden bg-canvas text-slate-900 dark:text-slate-200">
       {/* Admin Sidebar */}
       <aside className="w-64 flex flex-col border-r border-border/70 bg-surface shrink-0 select-none">
         {/* Brand Header */}
@@ -46,7 +46,7 @@ export function AdminLayout({ onExitAdmin }: AdminLayoutProps) {
               <Shield size={18} />
             </div>
             <div>
-              <span className="text-xs font-bold tracking-tight text-white block">Admin Console</span>
+              <span className="text-xs font-bold tracking-tight text-slate-900 dark:text-white block">Admin Console</span>
               <span className="text-[10px] text-accent font-semibold tracking-wider uppercase block">
                 Control Plane
               </span>

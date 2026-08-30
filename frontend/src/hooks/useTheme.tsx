@@ -198,8 +198,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     }
 
     // Set accent color properties
-    root.style.setProperty("--color-accent", activeColorTheme.colorRgb);
-    root.style.setProperty("--color-accent-muted", activeColorTheme.colorMutedRgb);
+    let accentRgb = activeColorTheme.colorRgb;
+    let accentMutedRgb = activeColorTheme.colorMutedRgb;
+    if (activeColorTheme.id === "veo-onyx" && mode === "light") {
+      accentRgb = "15 23 42";
+      accentMutedRgb = "51 65 85";
+    }
+    root.style.setProperty("--color-accent", accentRgb);
+    root.style.setProperty("--color-accent-muted", accentMutedRgb);
   }, [mode, activeColorTheme]);
 
   return (

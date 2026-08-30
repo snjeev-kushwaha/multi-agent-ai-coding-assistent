@@ -70,7 +70,7 @@ export function UserDetailDrawer({
         );
       case "cancelled":
         return (
-          <span className="inline-flex items-center rounded bg-slate-800 px-1.5 py-0.5 text-[10px] text-slate-400 border border-border">
+          <span className="inline-flex items-center rounded bg-surfaceRaised px-1.5 py-0.5 text-[10px] text-slate-400 border border-border">
             Cancelled
           </span>
         );
@@ -87,7 +87,7 @@ export function UserDetailDrawer({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in duration-150">
       <div className="relative w-full max-w-2xl max-h-[85vh] flex flex-col rounded-2xl border border-border bg-surfaceRaised shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-border p-4 bg-[#0e1117]">
+        <div className="flex items-center justify-between border-b border-border p-4 bg-surface">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-accent to-indigo-400 text-sm font-bold text-white shadow">
               {user.email.charAt(0).toUpperCase()}
@@ -132,7 +132,7 @@ export function UserDetailDrawer({
             </div>
 
             {/* Meter Bar */}
-            <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+            <div className="w-full bg-slate-200 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
               <div
                 style={{ width: `${tokenPercent}%` }}
                 className={`h-full rounded-full transition-all ${
@@ -213,7 +213,7 @@ export function UserDetailDrawer({
         </div>
 
         {/* Footer */}
-        <div className="border-t border-border p-3.5 bg-[#0e1117] flex justify-end">
+        <div className="border-t border-border p-3.5 bg-surface flex justify-end">
           <button
             onClick={onClose}
             className="rounded-xl bg-surfaceRaised border border-border px-4 py-2 text-xs font-semibold text-slate-200 hover:text-white"

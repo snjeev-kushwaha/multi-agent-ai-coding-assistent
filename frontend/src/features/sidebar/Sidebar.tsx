@@ -224,11 +224,10 @@ export function Sidebar({
 
       {/* Sidebar Drawer */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex h-full w-72 flex-col border-r border-border bg-surface text-slate-300 select-none shadow-2xl transition-all duration-300 ease-in-out md:static md:z-auto md:shadow-none shrink-0 ${
-          isOpen
+        className={`fixed inset-y-0 left-0 z-50 flex h-full w-72 flex-col border-r border-border bg-surface text-slate-300 select-none shadow-2xl transition-all duration-300 ease-in-out md:static md:z-auto md:shadow-none shrink-0 ${isOpen
             ? "translate-x-0 opacity-100 md:w-72"
             : "-translate-x-full opacity-0 pointer-events-none md:w-0 md:opacity-0 md:border-r-0 md:overflow-hidden"
-        }`}
+          }`}
       >
         {/* Header with App Title & Close button on mobile */}
         <div className="flex items-center justify-between border-b border-border/70 p-3.5">
@@ -236,7 +235,7 @@ export function Sidebar({
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent text-white shadow-sm font-bold text-xs">
               <Sparkles size={15} />
             </div>
-            <span className="text-xs font-bold tracking-tight text-white">Coder Buddy</span>
+            <span className="text-xs font-semibold tracking-tight">Codeframe</span> {/*Coder Buddy, CodeCrew */}
           </div>
 
           <button
@@ -310,11 +309,10 @@ export function Sidebar({
                 <div
                   key={j.id}
                   onClick={() => handleSelectJobClick(j.id)}
-                  className={`group relative flex flex-col gap-1 rounded-xl p-2.5 text-left text-xs transition cursor-pointer border ${
-                    isSelected
+                  className={`group relative flex flex-col gap-1 rounded-xl p-2.5 text-left text-xs transition cursor-pointer border ${isSelected
                       ? "border-accent/40 bg-accent/10 text-slate-100 shadow-sm"
                       : "border-transparent text-slate-300 hover:border-border/60 hover:bg-surfaceRaised/60"
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center justify-between gap-1.5">
                     <span className="truncate font-medium text-slate-200 group-hover:text-white flex-1 pr-1">
@@ -326,11 +324,10 @@ export function Sidebar({
                       <button
                         onClick={(e) => handleOpenMenu(e, j.id)}
                         title="More options"
-                        className={`rounded-lg p-1 transition ${
-                          isMenuOpen
+                        className={`rounded-lg p-1 transition ${isMenuOpen
                             ? "bg-surfaceRaised text-white"
                             : "opacity-0 group-hover:opacity-100 text-slate-400 hover:text-white hover:bg-surfaceRaised"
-                        }`}
+                          }`}
                       >
                         <MoreHorizontal size={14} />
                       </button>

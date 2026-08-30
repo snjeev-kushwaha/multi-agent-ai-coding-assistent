@@ -137,7 +137,7 @@ export function AdminJobsPage() {
         );
       case "cancelled":
         return (
-          <span className="inline-flex items-center gap-1 rounded-full bg-slate-800 px-2 py-0.5 text-[10px] font-medium text-slate-400 border border-border">
+          <span className="inline-flex items-center gap-1 rounded-full bg-surfaceRaised px-2 py-0.5 text-[10px] font-medium text-slate-400 border border-border">
             Cancelled
           </span>
         );
