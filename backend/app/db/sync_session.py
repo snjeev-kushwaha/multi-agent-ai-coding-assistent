@@ -23,7 +23,11 @@ def _to_sync_url(async_url: str) -> str:
 
 
 settings = get_settings()
-_sync_engine = create_engine(_to_sync_url(settings.DATABASE_URL))
+_sync_engine = create_engine(
+    _to_sync_url(settings.DATABASE_URL),
+    pool_pre_ping=True,
+    pool_recycle=300,
+)
 SyncSessionLocal = sessionmaker(bind=_sync_engine, expire_on_commit=False)
 
 

@@ -268,6 +268,9 @@ async def respond_to_job(
     job_id: str, payload: RespondRequest,
     user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db),
 ):
+    if user.is_suspended:
+        raise ForbiddenError("Your account has been suspended. Please contact an administrator.")
+
     result = await db.execute(select(Job).where(Job.id == job_id, Job.user_id == user.id))
     job = result.scalar_one_or_none()
     if job is None:

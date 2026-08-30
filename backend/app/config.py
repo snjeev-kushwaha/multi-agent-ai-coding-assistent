@@ -38,7 +38,8 @@ class Settings(BaseSettings):
     # Verify current model names/limits at https://console.groq.com/docs/models
     # and https://console.groq.com/docs/rate-limits before relying on these.
 
-    # --- Rate limiting ---
+    # --- Rate limiting & Redis ---
+    REDIS_URL: str = "redis://localhost:6379/0"
     RATE_LIMIT_JOBS_PER_HOUR: int = 10
     RATE_LIMIT_REQUESTS_PER_MINUTE: int = 60
     RATE_LIMIT_ADMIN_PER_MINUTE: int = 120

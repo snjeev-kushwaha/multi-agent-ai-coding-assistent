@@ -10,12 +10,15 @@ services:
       - DEBUG=true
       - JWT_SECRET_KEY=${JWT_SECRET_KEY:-dev-only-secret-change-me}
       - DATABASE_URL=postgresql+asyncpg://coder_buddy:coder_buddy@postgres:5432/coder_buddy
+      - REDIS_URL=redis://redis:6379/0
       - GROQ_API_KEY=${GROQ_API_KEY}
       - CORS_ORIGINS=["http://localhost:5173"]
     volumes:
       - generated_projects:/app/generated_projects
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     restart: unless-stopped
 
@@ -35,16 +38,17 @@ services:
       timeout: 5s
       retries: 5
 
-  # Provisioned for the production swap described in app/workers/job_worker.py
-  # and app/workers/event_bus.py (Celery/RQ broker + cross-replica pub/sub).
-  # Not wired into the app yet -- the in-process worker/event bus works
-  # standalone for single-instance deployments.
   redis:
     image: redis:7-alpine
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
 volumes:
   postgres_data:
