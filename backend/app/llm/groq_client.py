@@ -77,7 +77,8 @@ class GroqClient:
         return self._call_with_retry(_do)
 
     def structured(self, model: str, system_prompt: str, user_prompt: str,
-                    schema: Type[T], temperature: float = 0.1, max_tokens: int = 4096) -> T:
+                    schema: Type[T], temperature: float = 0.1, max_tokens: int = 4096,
+                    return_usage: bool = False) -> T | tuple[T, int]:
         """
         Forces JSON-only output and validates against a Pydantic schema.
         On validation failure, re-prompts ONCE with the validation error appended
@@ -95,13 +96,19 @@ class GroqClient:
             {"role": "user", "content": user_prompt},
         ]
 
+        total_tokens = 0
         for attempt in range(2):
             response = self.chat(model, messages, temperature=temperature, max_tokens=max_tokens)
+            if response and getattr(response, "usage", None):
+                total_tokens += getattr(response.usage, "total_tokens", 0) or 0
             raw = response.choices[0].message.content.strip()
             raw = raw.removeprefix("```json").removeprefix("```").removesuffix("```").strip()
             try:
                 data = json.loads(raw)
-                return schema.model_validate(data)
+                result = schema.model_validate(data)
+                if return_usage:
+                    return result, total_tokens
+                return result
             except (json.JSONDecodeError, ValidationError) as exc:
                 logger.warning("Structured output validation failed (attempt %d): %s", attempt + 1, exc)
                 if attempt == 0:
@@ -112,6 +119,15 @@ class GroqClient:
                     })
                     continue
                 raise LLMProviderError(f"Model failed to produce valid structured output: {exc}")
+
+    def structured_with_usage(self, model: str, system_prompt: str, user_prompt: str,
+                              schema: Type[T], temperature: float = 0.1, max_tokens: int = 4096) -> tuple[T, int]:
+        res = self.structured(
+            model=model, system_prompt=system_prompt, user_prompt=user_prompt,
+            schema=schema, temperature=temperature, max_tokens=max_tokens, return_usage=True,
+        )
+        return res  # type: ignore
+
 
 
 _client_singleton: Optional[GroqClient] = None

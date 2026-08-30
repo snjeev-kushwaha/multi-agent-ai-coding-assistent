@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { PanelLeftOpen, Plus, Sparkles, FolderCode } from "lucide-react";
 import { AuthProvider, useAuth } from "./hooks/useAuth";
+import { ThemeProvider } from "./hooks/useTheme";
 import { useJobStream } from "./hooks/useJobStream";
 import { useJobStore } from "./store/jobStore";
+
 import { AuthScreen } from "./features/chat/AuthScreen";
 import { PromptInput } from "./features/chat/PromptInput";
 import { AgentTimeline } from "./features/chat/AgentTimeline";
@@ -11,8 +13,14 @@ import { FileTree } from "./features/file-explorer/FileTree";
 import { CodeViewer } from "./features/file-explorer/CodeViewer";
 import { DownloadButton } from "./features/download/DownloadButton";
 import { Sidebar } from "./features/sidebar/Sidebar";
+import { AdminLayout } from "./features/admin/AdminLayout";
+import { AdminRouteGuard } from "./features/admin/AdminRouteGuard";
 
-function Workspace() {
+interface WorkspaceProps {
+  onOpenAdmin: () => void;
+}
+
+function Workspace({ onOpenAdmin }: WorkspaceProps) {
   const [jobId, setJobId] = useState<string | null>(null);
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
@@ -64,12 +72,14 @@ function Workspace() {
         onNewProject={handleNewProject}
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
+        onOpenAdmin={onOpenAdmin}
       />
 
       {/* Main Workspace */}
       <div className="flex flex-1 flex-col overflow-hidden min-w-0">
         {/* Top Header */}
-        <header className="flex items-center justify-between border-b border-border bg-[#0e1117] px-3 sm:px-4 py-2.5">
+        <header className="flex items-center justify-between border-b border-border bg-surface px-3 sm:px-4 py-2.5">
+
           <div className="flex items-center gap-2.5 min-w-0">
             {!isSidebarOpen && (
               <button
@@ -155,15 +165,60 @@ function Workspace() {
 
 function AppInner() {
   const { isAuthenticated } = useAuth();
-  return isAuthenticated ? <Workspace /> : <AuthScreen />;
+  const [isAdminRoute, setIsAdminRoute] = useState(() => {
+    if (typeof window !== "undefined") {
+      return window.location.pathname.startsWith("/admin") || window.location.hash.startsWith("#admin");
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setIsAdminRoute(window.location.pathname.startsWith("/admin") || window.location.hash.startsWith("#admin"));
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
+  const navigateToAdmin = () => {
+    if (typeof window !== "undefined") {
+      window.history.pushState({}, "", "/admin");
+    }
+    setIsAdminRoute(true);
+  };
+
+  const navigateToWorkspace = () => {
+    if (typeof window !== "undefined") {
+      window.history.pushState({}, "", "/");
+    }
+    setIsAdminRoute(false);
+  };
+
+  if (!isAuthenticated) {
+    return <AuthScreen />;
+  }
+
+  if (isAdminRoute) {
+    return (
+      <AdminRouteGuard onExitAdmin={navigateToWorkspace}>
+        <AdminLayout onExitAdmin={navigateToWorkspace} />
+      </AdminRouteGuard>
+    );
+  }
+
+  return <Workspace onOpenAdmin={navigateToAdmin} />;
 }
 
 export default function App() {
   return (
-    <AuthProvider>
-      <div className="h-screen bg-canvas">
-        <AppInner />
-      </div>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <div className="h-screen bg-canvas text-slate-100">
+          <AppInner />
+        </div>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
+
+

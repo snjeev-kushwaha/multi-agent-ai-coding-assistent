@@ -42,6 +42,7 @@ export interface Job {
   status: JobStatus;
   user_prompt: string;
   mode?: "build" | "edit";
+  groq_tokens_used?: number;
   plan: Plan | null;
   task_plan: TaskPlan | null;
   files_written: Record<string, boolean> | null;
@@ -75,6 +76,9 @@ export interface AuthTokens {
 export interface UserProfile {
   id: string;
   email: string;
+  is_admin?: boolean;
+  is_suspended?: boolean;
   created_at: string;
   total_projects: number;
 }
+

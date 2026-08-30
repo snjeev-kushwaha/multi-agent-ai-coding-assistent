@@ -92,3 +92,5 @@ class GraphState(TypedDict, total=False):
     status: JobStatus
     errors: list[str]
     retry_budget: int                    # global cap so a bad retry loop can't run forever
+    groq_tokens_used: int                # cumulative Groq tokens consumed across all agent steps
+

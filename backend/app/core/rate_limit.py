@@ -52,10 +52,48 @@ class InMemoryBucketStore:
                 return True
             return False
 
+    def get_state(self, key: str, capacity: int, refill_period_seconds: float) -> dict:
+        """Returns the current token balance and capacity of a bucket."""
+        bucket = self._get_bucket(key, capacity)
+        refill_rate = capacity / refill_period_seconds
+
+        with bucket.lock:
+            now = time.monotonic()
+            elapsed = now - bucket.last_refill
+            current_tokens = min(capacity, bucket.tokens + elapsed * refill_rate)
+            return {
+                "key": key,
+                "tokens_remaining": round(current_tokens, 2),
+                "capacity": capacity,
+                "period_seconds": refill_period_seconds,
+            }
+
+    def reset(self, key_or_prefix: str) -> int:
+        """Removes bucket(s) matching the key or starting with the prefix."""
+        with self._store_lock:
+            keys_to_delete = [
+                k for k in self._buckets
+                if k == key_or_prefix or k.startswith(f"{key_or_prefix}:") or k.startswith(key_or_prefix)
+            ]
+            for k in keys_to_delete:
+                del self._buckets[k]
+            return len(keys_to_delete)
+
 
 _store = InMemoryBucketStore()
+bucket_store = _store
+
 
 
 def enforce_rate_limit(key: str, capacity: int, period_seconds: float, error_message: str) -> None:
     if not _store.consume(key, capacity, period_seconds):
         raise RateLimitError(error_message)
+
+
+def get_user_rate_limit_state(user_id: str, capacity: int = 10, period_seconds: float = 3600.0) -> dict:
+    return _store.get_state(f"jobs:{user_id}", capacity=capacity, refill_period_seconds=period_seconds)
+
+
+def reset_user_rate_limit(user_id: str) -> int:
+    return _store.reset(f"jobs:{user_id}")
+

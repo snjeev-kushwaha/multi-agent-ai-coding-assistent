@@ -41,6 +41,8 @@ class Settings(BaseSettings):
     # --- Rate limiting ---
     RATE_LIMIT_JOBS_PER_HOUR: int = 10
     RATE_LIMIT_REQUESTS_PER_MINUTE: int = 60
+    RATE_LIMIT_ADMIN_PER_MINUTE: int = 120
+
 
     # --- Job execution ---
     MAX_FILES_PER_PROJECT: int = 25

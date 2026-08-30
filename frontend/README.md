@@ -1,64 +1,100 @@
-# AI Coding Assistant -- Frontend
+# AI Coding Assistant — Frontend
 
-React + Vite + Tailwind UI for the multi-agent coding assistant backend.
+A modern, high-performance web interface for the Multi-Agent Coding Assistant built with **React**, **Vite**, **TypeScript**, and **Tailwind CSS**.
 
-## Quick start
+---
 
+## Quick Start (Step-by-Step)
+
+### 1. Prerequisites
+- Node.js 18+
+- Backend API running on `http://localhost:8000`
+
+### 2. Installation & Launch
 ```bash
+# Navigate to frontend directory
+cd frontend
+
+# Install dependencies
 npm install
+
+# Start development server
 npm run dev
 ```
 
-Open http://localhost:5173. API calls to `/api/*` are proxied to
-`http://localhost:8000` by `vite.config.ts` -- run the backend first (see
-`../backend/README.md`).
+Open [http://localhost:5173](http://localhost:5173) in your browser.
 
-## What's here
+---
 
-- **`src/hooks/useAuth.tsx`** -- signup/login/logout, JWT stored in
-  localStorage, automatic refresh-token retry on a 401 (`src/api/client.ts`).
-- **`src/hooks/useJobStream.ts`** + **`src/lib/streaming.ts`** -- subscribes
-  to a job's Server-Sent Events stream. Uses `fetch()`'s streaming body
-  rather than the native `EventSource`, specifically so an `Authorization`
-  header can be attached (EventSource can't send custom headers, and we
-  don't want auth tokens sitting in a URL).
-- **`src/features/chat/ConfirmationModal.tsx`** -- renders the three pause
-  points the backend can send: a clarifying-questions form, a plan review
-  (approve / request changes / cancel), and a file-list review (same three
-  actions). This is the UI half of the backend's human-in-the-loop
-  `interrupt()` nodes.
-- **`src/features/file-explorer/`** -- live file tree (pending / done /
-  failed per file) and a read-only CodeMirror viewer that fetches file
-  content on demand from `GET /jobs/{id}/files/{path}`.
-- **`src/features/download/DownloadButton.tsx`** -- downloads the packaged
-  zip once the job reaches `done`, surfacing a warning if any files failed
-  (partial success is still downloadable, per the backend's Packager node).
+## Key Features
 
-## Production build
+### 1. Interactive Workspace & Coding Studio
+- **Project Generation**: Start new code projects with custom prompts or edit existing codebases.
+- **Human-in-the-Loop Dialogs**: Approve or modify plans and architectural file maps before code generation begins.
+- **Live Agent Timeline**: Real-time SSE streaming of agent thoughts, tool calls, and file generation status.
+- **CodeMirror Syntax Viewer**: Syntax-highlighted code explorer with line numbers and file tree folding.
+- **One-Click Download**: Instant packaged ZIP download of completed projects.
+
+### 2. Project History & Management
+- **Sidebar Drawer**: Responsive project history sidebar with real-time search filtering.
+- **Triple-Dot (`•••`) Context Menu**:
+  - **Rename Project**: Custom modal to update project titles on the fly.
+  - **Delete Project**: Confirmation dialog with permanent cleanup.
+- **Responsive Layout**: Collapsible sidebar with full mobile support.
+
+### 3. Theme & Color Palette System
+- **Light & Dark Mode**: Instant toggle for light and dark color schemes.
+- **12 Curated Accent Themes**: Upward-floating color palette picker with live preview swatches:
+  - *Veo Onyx*, *Ocean Blue*, *Midnight Azure*, *Graphite Studio*, *Copper Slate*, *Ember Orange*, *Sunlit Yellow*, *Grove Green*, *Studio Rose*, *Signal Red*, *Barbie Pink*, *Teal Horizon*.
+- **Persistence**: Remembers your preferred mode and theme across sessions via `localStorage`.
+
+### 4. Admin Console Suite (`/admin`)
+- **Route Guard**: Client-side protection with 403 access barriers for non-admin accounts.
+- **System Overview & KPI Cards**: Live counters for jobs today, Groq tokens consumed, success rate, and estimated API spend.
+- **Interactive Timeseries Charts**: Toggle between smooth SVG Bezier curve line charts and bar charts across 7d/14d/30d/90d horizons.
+- **User Management Directory**: Search users, review hourly rate-limit token meters, reset limits, and suspend/unsuspend accounts.
+- **Job Oversight & Triage**: Filter jobs by status, user, and date range, with failure stage summary badges and live job cancellation.
+- **Audit Trail Inspector**: Queryable log of all administrative actions with formatted JSON metadata viewer.
+
+---
+
+## Production Build
 
 ```bash
-npm run build      # outputs to dist/
-npm run preview    # serve the production build locally to sanity-check it
+# Compile TypeScript and bundle with Vite
+npm run build
+
+# Preview the production build locally
+npm run preview
 ```
 
-Docker (nginx serving the static build + proxying `/api` to the backend):
-
+### Docker Deployment
 ```bash
 docker build -t coder-buddy-frontend .
 docker run -p 8080:80 coder-buddy-frontend
 ```
 
-`nginx.conf` proxies `/api/` to a service named `api` on port 8000 -- match
-that to your backend's docker-compose service name, or point it at a real
-domain in production.
+---
 
-## Known trade-offs worth knowing about
+## Project Structure
 
-- The main JS bundle is ~272 kB gzipped, mostly CodeMirror's language
-  packages. Fine for an internal tool; if this ships broadly, code-split the
-  CodeMirror language extensions with dynamic `import()` per file type
-  instead of bundling all five up front (see the Vite build warning for the
-  exact hook).
-- There's no client-side router yet -- the whole app is one view that
-  switches between "prompt input" and "workspace" based on local state. Add
-  a router when you need shareable job URLs or a job history page.
+```
+frontend/
+├── src/
+│   ├── api/              # API clients & TypeScript types (jobs, admin, auth)
+│   ├── features/
+│   │   ├── admin/        # Admin layout, route guard, and dashboard pages
+│   │   │   ├── pages/    # Overview, Users, Jobs, Failures, AuditLogs
+│   │   │   └── components/# UserDetailDrawer, AdminJobDetailDrawer, SuspendModal
+│   │   ├── chat/         # Prompt input, agent timeline, confirmation modals
+│   │   ├── download/     # ZIP download button
+│   │   ├── file-explorer/# File tree and CodeMirror editor
+│   │   └── sidebar/      # Sidebar, UserProfileModal, RenameModal, ThemeSelector
+│   ├── hooks/            # useAuth, useTheme, useJobStream
+│   ├── store/            # Zustand job and agent state stores
+│   ├── styles/           # Tailwind CSS and root theme variables
+│   ├── App.tsx           # View switcher, route guard, and app root
+│   └── main.tsx          # Application entrypoint
+├── tailwind.config.js    # Tailwind color theme tokens
+└── vite.config.ts        # Vite configuration & proxy settings
+```

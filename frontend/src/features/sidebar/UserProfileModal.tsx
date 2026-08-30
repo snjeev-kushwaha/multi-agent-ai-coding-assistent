@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X, User, Mail, Calendar, FolderGit2, LogOut, Copy, Check } from "lucide-react";
+import { X, User, Mail, Calendar, FolderGit2, LogOut, Copy, Check, Shield } from "lucide-react";
 import type { UserProfile } from "../../api/types";
 
 interface UserProfileModalProps {
@@ -7,9 +7,10 @@ interface UserProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
   onLogout: () => void;
+  onOpenAdmin?: () => void;
 }
 
-export function UserProfileModal({ user, isOpen, onClose, onLogout }: UserProfileModalProps) {
+export function UserProfileModal({ user, isOpen, onClose, onLogout, onOpenAdmin }: UserProfileModalProps) {
   const [copied, setCopied] = useState(false);
 
   if (!isOpen || !user) return null;
@@ -38,7 +39,14 @@ export function UserProfileModal({ user, isOpen, onClose, onLogout }: UserProfil
               {user.email.charAt(0).toUpperCase()}
             </div>
             <div>
-              <h2 className="text-base font-semibold text-slate-100">Account Details</h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-semibold text-slate-100">Account Details</h2>
+                {user.is_admin && (
+                  <span className="rounded-full bg-accent/20 px-2 py-0.5 text-[10px] font-bold text-accent border border-accent/40">
+                    ADMIN
+                  </span>
+                )}
+              </div>
               <p className="text-xs text-slate-400">Manage your profile and track stats</p>
             </div>
           </div>
@@ -52,6 +60,23 @@ export function UserProfileModal({ user, isOpen, onClose, onLogout }: UserProfil
 
         {/* User Details Grid */}
         <div className="my-5 flex flex-col gap-3">
+          {/* Admin quick entry */}
+          {user.is_admin && onOpenAdmin && (
+            <button
+              onClick={() => {
+                onClose();
+                onOpenAdmin();
+              }}
+              className="flex items-center justify-between rounded-xl bg-accent/20 border border-accent/40 p-3.5 text-xs font-semibold text-accent hover:bg-accent/30 transition shadow-sm"
+            >
+              <div className="flex items-center gap-2.5">
+                <Shield size={16} />
+                <span>Launch Admin Control Console</span>
+              </div>
+              <span className="text-[11px] font-mono opacity-80">/admin &rarr;</span>
+            </button>
+          )}
+
           {/* Email */}
           <div className="flex items-center gap-3 rounded-xl border border-border/60 bg-surface/70 p-3.5">
             <Mail className="text-accent shrink-0" size={18} />
@@ -124,3 +149,4 @@ export function UserProfileModal({ user, isOpen, onClose, onLogout }: UserProfil
     </div>
   );
 }
+

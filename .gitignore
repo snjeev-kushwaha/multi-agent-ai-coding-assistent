@@ -1,0 +1,40 @@
+# Python & Virtual Environments
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+.pytest_cache/
+*.egg-info/
+.coverage
+htmlcov/
+
+# Local Environment Variables & Secrets
+.env
+.env.local
+.env.*.local
+
+# Database files (local sqlite if any)
+*.db
+*.sqlite3
+
+# Generated Artifacts
+backend/generated_projects/
+generated_projects/
+
+# Node & Frontend Build Output
+node_modules/
+dist/
+build/
+*.tsbuildinfo
+.npm/
+.eslintcache
+
+# IDE & Editor Files
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db

@@ -31,7 +31,7 @@ def reviewer_node(state: GraphState) -> GraphState:
     static_ok, static_msg = validate_file(task.filepath, content)
 
     client = get_groq_client()
-    review = client.structured(
+    review, tokens = client.structured_with_usage(
         model=settings.GROQ_MODEL_PLANNER,  # cheap model is fine for pass/fail judgment
         system_prompt=REVIEWER_SYSTEM,
         user_prompt=(
@@ -41,13 +41,15 @@ def reviewer_node(state: GraphState) -> GraphState:
         ),
         schema=ReviewVerdict,
     )
+    tokens_used = state.get("groq_tokens_used", 0) + tokens
 
     passed = static_ok and review.verdict.upper() == "PASS"
     if not passed:
         logger.info("Review FAILED for %s: static=%s llm=%s (%s)",
                     task.filepath, static_ok, review.verdict, review.reason)
     reason = static_msg if not static_ok else review.reason
-    return _advance_or_retry(state, passed=passed, reason=reason)
+    return _advance_or_retry({**state, "groq_tokens_used": tokens_used}, passed=passed, reason=reason)
+
 
 
 def _advance_or_retry(state: GraphState, passed: bool, reason: str = "") -> GraphState:

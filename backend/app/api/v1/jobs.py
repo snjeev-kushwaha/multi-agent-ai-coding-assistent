@@ -9,7 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user
-from app.core.exceptions import NotFoundError, ValidationFailedError
+from app.core.exceptions import ForbiddenError, NotFoundError, ValidationFailedError
 from app.core.logging import get_logger
 from app.core.rate_limit import enforce_rate_limit
 from app.config import get_settings
@@ -28,6 +28,7 @@ class CreateJobRequest(BaseModel):
     mode: str = Field(default="build", pattern="^(build|edit)$")
 
 
+
 class JobResponse(BaseModel):
     id: str
     status: str
@@ -38,6 +39,7 @@ class JobResponse(BaseModel):
     files_written: dict | None = None
     files_failed: dict | None = None
     download_path: str | None = None
+    groq_tokens_used: int = 0
     error_message: str | None = None
     created_at: datetime | None = None
     updated_at: datetime | None = None
@@ -54,6 +56,11 @@ class RespondRequest(BaseModel):
     answers: list[str] | None = None
 
 
+class RenameJobRequest(BaseModel):
+    title: str
+
+
+
 def _make_status_callback(job_id: str):
     """
     Persists status/state snapshots to the DB from the worker thread using a
@@ -62,11 +69,16 @@ def _make_status_callback(job_id: str):
     """
     def _callback(status: str, event: dict):
         db = get_sync_db()
+        current_tokens = 0
         try:
             job = db.get(Job, job_id)
             if job is None:
                 return
             job.status = status
+            tokens = event.get("groq_tokens_used")
+            if tokens is not None:
+                job.groq_tokens_used = tokens
+            current_tokens = job.groq_tokens_used
             plan = event.get("plan")
             if plan is not None:
                 job.plan_json = plan.model_dump() if hasattr(plan, "model_dump") else plan
@@ -84,7 +96,7 @@ def _make_status_callback(job_id: str):
         finally:
             db.close()
 
-        event_bus.publish(job_id, {"type": "status", "status": status})
+        event_bus.publish(job_id, {"type": "status", "status": status, "groq_tokens_used": current_tokens})
 
     return _callback
 
@@ -95,11 +107,15 @@ async def create_job(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
+    if user.is_suspended:
+        raise ForbiddenError("Your account has been suspended. Please contact an administrator.")
+
     settings = get_settings()
     enforce_rate_limit(
         f"jobs:{user.id}", capacity=settings.RATE_LIMIT_JOBS_PER_HOUR, period_seconds=3600,
         error_message="Job creation rate limit exceeded. Generation is expensive -- please wait before starting another.",
     )
+
 
     job = Job(user_id=user.id, user_prompt=payload.prompt, mode=payload.mode, status="queued")
     db.add(job)
@@ -114,6 +130,7 @@ async def create_job(
         status=job.status,
         user_prompt=job.user_prompt,
         mode=job.mode,
+        groq_tokens_used=job.groq_tokens_used,
         created_at=job.created_at,
         updated_at=job.updated_at,
     )
@@ -136,6 +153,7 @@ async def get_job(job_id: str, user: User = Depends(get_current_user), db: Async
         files_written=job.files_written,
         files_failed=job.files_failed,
         download_path=job.download_path,
+        groq_tokens_used=job.groq_tokens_used,
         error_message=job.error_message,
         created_at=job.created_at,
         updated_at=job.updated_at,
@@ -157,6 +175,7 @@ async def list_jobs(user: User = Depends(get_current_user), db: AsyncSession = D
             files_written=j.files_written,
             files_failed=j.files_failed,
             download_path=j.download_path,
+            groq_tokens_used=j.groq_tokens_used,
             error_message=j.error_message,
             created_at=j.created_at,
             updated_at=j.updated_at,
@@ -165,8 +184,50 @@ async def list_jobs(user: User = Depends(get_current_user), db: AsyncSession = D
     ]
 
 
+
+@router.patch("/{job_id}", response_model=JobResponse)
+async def rename_job(
+    job_id: str,
+    payload: RenameJobRequest,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(Job).where(Job.id == job_id, Job.user_id == user.id))
+    job = result.scalar_one_or_none()
+    if job is None:
+        raise NotFoundError("Job not found")
+
+    new_title = payload.title.strip()
+    if not new_title:
+        raise ValidationFailedError("Project title cannot be empty.")
+
+    current_plan = dict(job.plan_json or {})
+    current_plan["name"] = new_title
+    job.plan_json = current_plan
+
+    await db.commit()
+    await db.refresh(job)
+
+    return JobResponse(
+        id=job.id,
+        status=job.status,
+        user_prompt=job.user_prompt,
+        mode=job.mode,
+        plan=job.plan_json,
+        task_plan=job.task_plan_json,
+        files_written=job.files_written,
+        files_failed=job.files_failed,
+        download_path=job.download_path,
+        groq_tokens_used=job.groq_tokens_used,
+        error_message=job.error_message,
+        created_at=job.created_at,
+        updated_at=job.updated_at,
+    )
+
+
 @router.delete("/{job_id}")
 async def delete_job(job_id: str, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+
     result = await db.execute(select(Job).where(Job.id == job_id, Job.user_id == user.id))
     job = result.scalar_one_or_none()
     if job is None:

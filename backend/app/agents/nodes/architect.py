@@ -25,7 +25,7 @@ def architect_node(state: GraphState) -> GraphState:
         system = ARCHITECT_SYSTEM
         user = f"Approved plan: {state['plan'].model_dump_json(indent=2)}"
 
-    task_plan = client.structured(
+    task_plan, tokens = client.structured_with_usage(
         model=settings.GROQ_MODEL_ARCHITECT, system_prompt=system, user_prompt=user, schema=TaskPlan,
     )
 
@@ -35,12 +35,13 @@ def architect_node(state: GraphState) -> GraphState:
         # One retry with the violation fed back, then fail loudly rather than
         # silently proceeding with a broken task plan.
         logger.warning("Architect violated one-task-per-file rule, retrying: %s", exc)
-        task_plan = client.structured(
+        task_plan, retry_tokens = client.structured_with_usage(
             model=settings.GROQ_MODEL_ARCHITECT,
             system_prompt=system,
             user_prompt=user + f"\n\nYour previous attempt violated a hard constraint: {exc}. Fix this.",
             schema=TaskPlan,
         )
+        tokens += retry_tokens
         task_plan.validate_one_task_per_file()  # let it raise -> caught by graph error handling
 
     settings_max = settings.MAX_FILES_PER_PROJECT
@@ -50,13 +51,16 @@ def architect_node(state: GraphState) -> GraphState:
             f"exceeding the {settings_max}-file project limit."
         )
 
+    tokens_used = state.get("groq_tokens_used", 0) + tokens
     return {
         **state,
         "task_plan": task_plan,
         "architecture_feedback": None,
         "coder_state": CoderState(),
         "status": "awaiting_architecture_confirmation",
+        "groq_tokens_used": tokens_used,
     }
+
 
 
 def architecture_confirm_node(state: GraphState) -> GraphState:

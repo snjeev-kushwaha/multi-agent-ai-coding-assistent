@@ -17,15 +17,16 @@ def clarifier_node(state: GraphState) -> GraphState:
     settings = get_settings()
     client = get_groq_client()
 
-    decision = client.structured(
+    decision, tokens = client.structured_with_usage(
         model=settings.GROQ_MODEL_PLANNER,
         system_prompt=CLARIFIER_SYSTEM,
         user_prompt=f"User request: {state['user_prompt']}",
         schema=ClarifierDecision,
     )
+    tokens_used = state.get("groq_tokens_used", 0) + tokens
 
     if not decision.needs_clarification or not decision.questions:
-        return {**state, "needs_clarification": False, "status": "planning"}
+        return {**state, "needs_clarification": False, "status": "planning", "groq_tokens_used": tokens_used}
 
     # Pause the graph here and surface the questions to the frontend via SSE;
     # resumes when the API layer calls graph.invoke(Command(resume=answers)).
@@ -44,4 +45,6 @@ def clarifier_node(state: GraphState) -> GraphState:
         "needs_clarification": False,
         "clarification_answers": answers,
         "status": "planning",
+        "groq_tokens_used": tokens_used,
     }
+

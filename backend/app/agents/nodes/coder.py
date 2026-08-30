@@ -57,11 +57,14 @@ def coder_node(state: GraphState) -> GraphState:
     ]
 
     error: str | None = None
+    step_tokens = 0
     for step in range(settings.MAX_CODER_TOOL_STEPS):
         response = client.chat(
             model=settings.GROQ_MODEL_CODER, messages=messages,
             temperature=0.15, tools=TOOL_SCHEMAS,
         )
+        if response and getattr(response, "usage", None):
+            step_tokens += getattr(response.usage, "total_tokens", 0) or 0
         msg = response.choices[0].message
 
         if msg.tool_calls:
@@ -101,4 +104,11 @@ def coder_node(state: GraphState) -> GraphState:
     else:
         new_coder_state.files_written[task.filepath] = tools.read_file(task.filepath)
 
-    return {**state, "coder_state": new_coder_state, "status": "reviewing"}
+    tokens_used = state.get("groq_tokens_used", 0) + step_tokens
+    return {
+        **state,
+        "coder_state": new_coder_state,
+        "status": "reviewing",
+        "groq_tokens_used": tokens_used,
+    }
+

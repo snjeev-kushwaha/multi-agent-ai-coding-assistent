@@ -23,11 +23,15 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 class UserProfileResponse(BaseModel):
     id: str
     email: EmailStr
+    is_admin: bool = False
+    is_suspended: bool = False
     created_at: datetime
     total_projects: int
 
     class Config:
         from_attributes = True
+
+
 
 
 class SignupRequest(BaseModel):
@@ -110,6 +114,10 @@ async def get_me(
     return UserProfileResponse(
         id=current_user.id,
         email=current_user.email,
+        is_admin=current_user.is_admin,
+        is_suspended=current_user.is_suspended,
         created_at=current_user.created_at,
         total_projects=total_projects,
     )
+
+

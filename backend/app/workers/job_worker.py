@@ -30,6 +30,7 @@ logger = get_logger(__name__)
 # be a Redis list/stream keyed by job_id instead of an in-memory Queue.
 _resume_queues: dict[str, ThreadQueue] = {}
 _active_threads: dict[str, threading.Thread] = {}
+_cancel_events: dict[str, threading.Event] = {}
 
 
 def resume_job(job_id: str, payload) -> bool:
@@ -41,12 +42,32 @@ def resume_job(job_id: str, payload) -> bool:
     return True
 
 
+def cancel_job(job_id: str) -> bool:
+    """Called by the API layer to cancel a running or paused job."""
+    cancelled = False
+    evt = _cancel_events.get(job_id)
+    if evt is not None:
+        evt.set()
+        cancelled = True
+
+    q = _resume_queues.get(job_id)
+    if q is not None:
+        q.put({"action": "cancel"})
+        cancelled = True
+
+    return cancelled
+
+
 def _run(job_id: str, user_prompt: str, mode: str, project_root: str,
           on_status_change) -> None:
     job_id_ctx.set(job_id)
     settings = get_settings()
     graph = get_graph()
     config = {"configurable": {"thread_id": job_id}, "recursion_limit": 100}
+
+    cancel_event = threading.Event()
+    _cancel_events[job_id] = cancel_event
+
 
     initial_state: GraphState = {
         "job_id": job_id,
@@ -61,7 +82,9 @@ def _run(job_id: str, user_prompt: str, mode: str, project_root: str,
         "status": "clarifying",
         "errors": [],
         "retry_budget": 10,
+        "groq_tokens_used": 0,
     }
+
 
     resume_queue: ThreadQueue = ThreadQueue()
     _resume_queues[job_id] = resume_queue
@@ -69,11 +92,23 @@ def _run(job_id: str, user_prompt: str, mode: str, project_root: str,
     graph_input = initial_state
     try:
         while True:
+            if cancel_event.is_set():
+                logger.info("Job %s was cancelled", job_id)
+                on_status_change("cancelled", {"error": "Job was cancelled by administrator."})
+                break
+
             interrupted = False
             for event in graph.stream(graph_input, config=config, stream_mode="values"):
+                if cancel_event.is_set():
+                    break
                 status = event.get("status")
                 if status:
                     on_status_change(status, event)
+
+            if cancel_event.is_set():
+                logger.info("Job %s was cancelled during stream", job_id)
+                on_status_change("cancelled", {"error": "Job was cancelled by administrator."})
+                break
 
             # Check whether the graph paused on an interrupt() call.
             snapshot = graph.get_state(config)
@@ -88,14 +123,19 @@ def _run(job_id: str, user_prompt: str, mode: str, project_root: str,
                     event_bus.publish(job_id, {"type": "interrupt", "payload": interrupt_payload})
                     on_status_change("awaiting_input", {"interrupt": interrupt_payload})
                     human_response = resume_queue.get()  # blocks this thread only
+                    if cancel_event.is_set() or human_response == "cancel" or (isinstance(human_response, dict) and human_response.get("action") == "cancel"):
+                        logger.info("Job %s cancelled at interrupt", job_id)
+                        on_status_change("cancelled", {"error": "Job was cancelled by administrator."})
+                        break
                     graph_input = Command(resume=human_response)
                     interrupted = True
 
             if not interrupted:
                 break  # graph ran to completion (or hit an error) with no pending interrupt
 
-        final_state = graph.get_state(config).values
-        event_bus.publish(job_id, {"type": "done", "status": final_state.get("status")})
+        if not cancel_event.is_set():
+            final_state = graph.get_state(config).values
+            event_bus.publish(job_id, {"type": "done", "status": final_state.get("status")})
 
     except Exception as exc:
         logger.exception("Job %s failed", job_id)
@@ -103,7 +143,9 @@ def _run(job_id: str, user_prompt: str, mode: str, project_root: str,
         on_status_change("failed", {"error": str(exc)})
     finally:
         _resume_queues.pop(job_id, None)
+        _cancel_events.pop(job_id, None)
         _active_threads.pop(job_id, None)
+
 
 
 def start_job(job_id: str, user_prompt: str, mode: str, on_status_change) -> None:

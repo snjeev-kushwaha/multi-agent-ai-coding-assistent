@@ -24,11 +24,19 @@ export async function listJobs(): Promise<Job[]> {
   return apiFetch<Job[]>("/jobs");
 }
 
+export async function renameJob(jobId: string, title: string): Promise<Job> {
+  return apiFetch<Job>(`/jobs/${jobId}`, {
+    method: "PATCH",
+    body: JSON.stringify({ title }),
+  });
+}
+
 export async function deleteJob(jobId: string): Promise<void> {
   await apiFetch(`/jobs/${jobId}`, {
     method: "DELETE",
   });
 }
+
 
 export async function respondToJob(
   jobId: string,

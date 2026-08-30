@@ -1,15 +1,16 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
+  darkMode: "class",
   theme: {
     extend: {
       colors: {
-        canvas: "#0b0d11",
-        surface: "#13161c",
-        surfaceRaised: "#1a1e26",
-        border: "#262b35",
-        accent: "#6366f1",
-        accentMuted: "#4338ca",
+        canvas: "rgb(var(--color-canvas) / <alpha-value>)",
+        surface: "rgb(var(--color-surface) / <alpha-value>)",
+        surfaceRaised: "rgb(var(--color-surface-raised) / <alpha-value>)",
+        border: "rgb(var(--color-border) / <alpha-value>)",
+        accent: "rgb(var(--color-accent) / <alpha-value>)",
+        accentMuted: "rgb(var(--color-accent-muted) / <alpha-value>)",
         success: "#22c55e",
         danger: "#ef4444",
         warning: "#eab308",

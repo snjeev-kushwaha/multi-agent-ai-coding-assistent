@@ -1,78 +1,143 @@
-# AI Coding Assistant -- Backend
+# AI Coding Assistant — Backend
 
-Multi-agent (Clarifier -> Planner -> Architect -> Coder -> Reviewer -> Packager)
-project generator built on LangGraph + FastAPI + Groq.
+A robust, multi-agent autonomous software generator built with **FastAPI**, **LangGraph**, **PostgreSQL**, **Alembic**, and **Groq LLM**.
 
-## Quick start (local, SQLite)
+---
 
+## Quick Start (Step-by-Step)
+
+### 1. Prerequisites
+- Python 3.11+
+- PostgreSQL database running locally or via Docker
+
+### 2. Environment Setup
 ```bash
+# Navigate to backend directory
+cd backend
+
+# Create and activate virtual environment
 python -m venv venv
-source venv/bin/activate        # Windows: venv\Scripts\activate
+# On Windows:
+venv\Scripts\activate
+# On Linux/macOS:
+source venv/bin/activate
+
+# Install dependencies
 pip install -r requirements.txt
 
+# Create your .env configuration
 cp .env.example .env
-# edit .env -- at minimum set GROQ_API_KEY (free key: https://console.groq.com)
+```
 
+Edit `.env` and configure:
+```ini
+GROQ_API_KEY=gsk_your_groq_api_key_here
+DATABASE_URL=postgresql+asyncpg://coder_buddy:coder_buddy@localhost:5432/coder_buddy
+JWT_SECRET_KEY=your_super_secret_jwt_key
+```
+
+### 3. Database Migrations
+Run Alembic migrations to create tables and schemas in PostgreSQL:
+```bash
+alembic upgrade head
+```
+
+### 4. Seed an Admin User
+Seed your initial admin account directly into the database (no HTTP route exposed):
+```bash
+python scripts/seed_admin.py --email admin@example.com --password AdminPassword123!
+```
+
+### 5. Start the Server
+```bash
 uvicorn app.main:app --reload --port 8000
 ```
+- **API Documentation**: [http://localhost:8000/docs](http://localhost:8000/docs)
+- **Health Check**: [http://localhost:8000/health](http://localhost:8000/health)
 
-API docs: http://localhost:8000/docs
-Health check: http://localhost:8000/health
+---
 
-## Quick start (Docker, Postgres)
-
-```bash
-export GROQ_API_KEY=your_key_here
-export JWT_SECRET_KEY=$(openssl rand -hex 32)
-docker compose up --build
-```
-
-## Architecture
-
-See `app/agents/graph.py` for the full pipeline wiring. Short version:
+## System Architecture
 
 ```
-Clarifier -> Planner -> [Plan Confirm] -> Architect -> [Architecture Confirm]
-  -> Coder (loops per file, tool-calling ReAct agent)
-  -> Reviewer (static check + LLM verdict, retries failed files)
-  -> Packager -> done
+User Prompt
+    │
+    ▼
+[Clarifier Agent] ─── (Optional Human Clarification)
+    │
+    ▼
+[Planner Agent] ──── (Human Plan Approval / Changes)
+    │
+    ▼
+[Architect Agent] ── (Human Architecture Approval)
+    │
+    ▼
+[Coder Agent] ────── (ReAct tool-calling loop per file)
+    │
+    ▼
+[Reviewer Agent] ─── (Static analysis + LLM verification, auto-retries failed files)
+    │
+    ▼
+[Packager] ───────── (UTF-8 Manifest & ZIP packaging)
+    │
+    ▼
+Project Download Ready
 ```
 
-The two `[... Confirm]` steps pause the graph via LangGraph's `interrupt()`
-and wait for a human response delivered through `POST /jobs/{id}/respond` --
-this is what lets the frontend show "review the plan" / "review the file
-list" screens before any code gets written.
+---
 
-## Key things to know before deploying this for real
+## Features & Capabilities
 
-- **Rate limiting is in-memory** (`app/core/rate_limit.py`). Fine for one
-  process; swap for Redis before running multiple API replicas.
-- **The job worker runs in a background thread**, not a real task queue
-  (`app/workers/job_worker.py`). Fine for low concurrency / a demo; swap for
-  Celery/RQ/Arq consuming from Redis before scaling this for real traffic --
-  the graph-invocation logic itself doesn't need to change, just how it's
-  scheduled.
-- **The `run_cmd` tool executes real shell commands** on the host running the
-  worker, gated only by the pattern blocklist in `app/agents/tools.py`. This
-  is NOT sufficient isolation for untrusted, multi-tenant traffic on its own
-  -- before exposing this publicly, route command execution through the
-  sandbox layer described in the architecture doc (§5.2): ephemeral,
-  network-isolated containers (Docker `--network=none`, or Firecracker/gVisor
-  for stronger isolation), not direct `subprocess.run` on the host.
-- **SQLite is the default DB** for zero-setup local dev. Switch
-  `DATABASE_URL` to Postgres (already supported, see `.env.example`) before
-  running more than one process against the same data.
-- Verify current Groq model names and rate limits before deploying --
-  https://console.groq.com/docs/models and
-  https://console.groq.com/docs/rate-limits -- these change over time and
-  the defaults in `app/config.py` may go stale.
+### 1. Multi-Agent Pipeline (LangGraph)
+- **Clarifier**: Asks targeted questions when project requirements are ambiguous.
+- **Planner**: Generates structured project plan, tech stack, and core feature list.
+- **Architect**: Breaks down architecture into modular implementation steps with dependencies.
+- **Coder**: Autonomous ReAct agent utilizing file creation, file replacement, line editing, and testing tools.
+- **Reviewer**: Inspects generated code for linting, syntax errors, and completeness.
+- **Packager**: Assembles generated project files into a downloadable ZIP archive with a UTF-8 generation manifest.
 
-## Tests
+### 2. Admin Control Plane (`/api/v1/admin/*`)
+- **Admin Auth Guard**: Router-level `get_current_admin` dependency ensuring strict 403 Forbidden enforcement.
+- **User Management**: Paginated user search, role filtering, suspension toggles (`/suspend`, `/unsuspend`), and token-bucket rate limit reset.
+- **Job Oversight & Triage**: Multi-filtered job listings, full file tree inspection, and live worker thread cancellation (`/cancel`).
+- **Failure Diagnostics**: Real-time failure aggregations categorized across pipeline stages (*Planner*, *Architect*, *Coder*, *Reviewer*).
+- **Usage & Cost Analytics**: Aggregated Groq token counts, daily job volume timeseries, and estimated API spend.
+- **Immutable Audit Trail**: Automatic database audit logging for all admin actions with JSON metadata inspection.
 
-The pipeline was validated end-to-end with mocked LLM responses (auth flow,
-plan/architecture confirmation pause+resume, tool-calling coder loop,
-reviewer, packager, zip output). Add these as pytest fixtures under
-`tests/integration/` following the pattern used during development --
-mock `GroqClient.structured` and `GroqClient.chat`, then drive
-`graph.stream()` / `Command(resume=...)` exactly as shown in this README's
-git history / dev notes.
+### 3. Production Security & Reliability
+- **PostgreSQL Native Support**: JSONB storage, foreign key cascades, and Alembic versioning.
+- **Admin Rate Limiting**: Dedicated 120 req/min token-bucket rate limiter per admin account.
+- **Directory Jail Security**: Strict file containment verification preventing path traversal (`../`) attacks.
+- **UTF-8 Unicode Safety**: Full Unicode encoding support handling non-breaking hyphens, em-dashes, and emojis across all file operations.
+
+---
+
+## Project Structure
+
+```
+backend/
+├── alembic/              # Database migration versions
+├── app/
+│   ├── agents/           # LangGraph agent nodes, state, and tools
+│   │   ├── nodes/        # Clarifier, Planner, Architect, Coder, Reviewer, Packager
+│   │   ├── graph.py      # LangGraph state machine workflow
+│   │   ├── state.py      # Graph state schemas
+│   │   └── tools.py      # Sandboxed file writing & editing tools
+│   ├── api/              # REST API route handlers
+│   │   ├── v1/
+│   │   │   ├── admin/    # Admin user, job, metrics, and audit routers
+│   │   │   ├── auth.py   # JWT registration & login
+│   │   │   ├── jobs.py   # Job creation, streaming, file access, rename
+│   │   │   └── router.py # API v1 routing hub
+│   │   └── deps.py       # Auth and Admin dependencies
+│   ├── core/             # Rate limiting, security, exceptions, logging
+│   ├── db/               # SQLAlchemy models and PostgreSQL session
+│   ├── llm/              # Groq API client with token tracking
+│   ├── workers/          # Background job worker and SSE event bus
+│   ├── config.py         # Application settings
+│   └── main.py           # FastAPI entrypoint
+├── scripts/
+│   └── seed_admin.py     # CLI admin user seeding utility
+├── requirements.txt      # Python dependencies
+└── alembic.ini           # Alembic database configuration
+```

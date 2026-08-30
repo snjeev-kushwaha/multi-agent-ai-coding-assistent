@@ -24,10 +24,18 @@ def planner_node(state: GraphState) -> GraphState:
         system = PLANNER_SYSTEM
         user = f"User request: {state['user_prompt']}"
 
-    plan = client.structured(
+    plan, tokens = client.structured_with_usage(
         model=settings.GROQ_MODEL_PLANNER, system_prompt=system, user_prompt=user, schema=Plan,
     )
-    return {**state, "plan": plan, "plan_feedback": None, "status": "awaiting_plan_confirmation"}
+    tokens_used = state.get("groq_tokens_used", 0) + tokens
+    return {
+        **state,
+        "plan": plan,
+        "plan_feedback": None,
+        "status": "awaiting_plan_confirmation",
+        "groq_tokens_used": tokens_used,
+    }
+
 
 
 def plan_confirm_node(state: GraphState) -> GraphState:

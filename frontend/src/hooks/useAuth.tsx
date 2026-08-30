@@ -5,6 +5,7 @@ import type { UserProfile } from "../api/types";
 
 interface AuthContextValue {
   isAuthenticated: boolean;
+  isAdmin: boolean;
   user: UserProfile | null;
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string) => Promise<void>;
@@ -54,12 +55,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }
 
+  const isAdmin = Boolean(user?.is_admin);
+
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, login, signup, logout, refreshUser: fetchUser }}>
+    <AuthContext.Provider value={{ isAuthenticated, isAdmin, user, login, signup, logout, refreshUser: fetchUser }}>
       {children}
     </AuthContext.Provider>
   );
 }
+
 
 export function useAuth(): AuthContextValue {
   const ctx = useContext(AuthContext);
